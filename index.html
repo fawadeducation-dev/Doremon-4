@@ -1,0 +1,2254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Guardian AI | Smart Emergency Wearable</title>
+
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    background:
+        radial-gradient(circle at top left, #18233b, #060912 55%);
+    color: white;
+}
+
+header {
+    padding: 24px;
+    border-bottom: 1px solid rgba(255,255,255,.1);
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.logo {
+    font-size: 25px;
+    font-weight: bold;
+}
+
+.logo span {
+    color: #42e8ff;
+}
+
+.status {
+    padding: 9px 15px;
+    border-radius: 20px;
+
+    background: rgba(0,255,150,.1);
+    color: #00ff9d;
+
+    border: 1px solid rgba(0,255,150,.3);
+
+    font-size: 13px;
+}
+
+.container {
+    width: 94%;
+    max-width: 1450px;
+    margin: auto;
+}
+
+.hero {
+    padding: 35px 0 20px;
+}
+
+.hero h1 {
+    font-size: clamp(35px,6vw,70px);
+    margin: 0;
+    line-height: 1;
+}
+
+.hero h1 span {
+    color: #42e8ff;
+}
+
+.hero p {
+    color: #aeb9d1;
+    max-width: 850px;
+    line-height: 1.7;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+@media(max-width:950px) {
+    .grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.card {
+    background: rgba(13,20,35,.82);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 20px;
+    padding: 20px;
+
+    box-shadow: 0 20px 60px rgba(0,0,0,.25);
+}
+
+.card-title {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 16px;
+}
+
+#deviceCanvas {
+    width: 100%;
+    height: 470px;
+    display: block;
+    border-radius: 16px;
+}
+
+.map-wrapper {
+    height: 470px;
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+#map {
+    width: 100%;
+    height: 100%;
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(4,1fr);
+    gap: 15px;
+}
+
+@media(max-width:850px) {
+    .stats {
+        grid-template-columns: repeat(2,1fr);
+    }
+}
+
+@media(max-width:500px) {
+    .stats {
+        grid-template-columns: 1fr;
+    }
+}
+
+.stat {
+    background: rgba(255,255,255,.035);
+    padding: 18px;
+    border-radius: 16px;
+
+    border: 1px solid rgba(255,255,255,.06);
+}
+
+.stat-label {
+    color: #8995ae;
+    font-size: 12px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.live {
+    color: #00ff9d;
+}
+
+.warning {
+    color: #ffcc45;
+}
+
+.danger {
+    color: #ff4d6d;
+}
+
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+button {
+    border: none;
+    padding: 13px 18px;
+    border-radius: 12px;
+
+    color: white;
+    background: #16233c;
+
+    border: 1px solid rgba(255,255,255,.12);
+
+    cursor: pointer;
+    font-weight: bold;
+
+    transition: .2s;
+}
+
+button:hover {
+    transform: translateY(-2px);
+    background: #203454;
+}
+
+button.primary {
+    background: #007f91;
+}
+
+button.danger-btn {
+    background: #b92345;
+}
+
+button.whatsapp {
+    background: #128c7e;
+}
+
+button.sms {
+    background: #2367c7;
+}
+
+.location-box {
+    margin-top: 15px;
+
+    padding: 15px;
+
+    border-radius: 14px;
+
+    background: rgba(0,0,0,.22);
+
+    border: 1px solid rgba(255,255,255,.07);
+}
+
+.location-line {
+    margin: 7px 0;
+    color: #c9d2e5;
+}
+
+.location-line strong {
+    color: white;
+}
+
+.alert {
+    display: none;
+
+    margin-top: 20px;
+
+    padding: 20px;
+
+    border-radius: 16px;
+
+    border: 1px solid rgba(255,70,100,.5);
+
+    background: rgba(160,20,50,.15);
+}
+
+.alert.active {
+    display: block;
+}
+
+.alert h2 {
+    color: #ff4d6d;
+    margin-top: 0;
+}
+
+.message-box {
+    white-space: pre-wrap;
+
+    background: #05070d;
+
+    padding: 15px;
+
+    border-radius: 12px;
+
+    color: #dce5f5;
+
+    line-height: 1.6;
+
+    font-size: 14px;
+
+    margin-top: 12px;
+}
+
+.send-status {
+    margin-top: 15px;
+
+    padding: 12px;
+
+    border-radius: 10px;
+
+    background: rgba(255,255,255,.04);
+
+    color: #b9c5d9;
+}
+
+.footer {
+    padding: 30px 0;
+
+    text-align: center;
+
+    color: #65718a;
+
+    font-size: 13px;
+}
+
+</style>
+</head>
+
+
+<body>
+
+<header>
+
+    <div class="logo">
+        GUARDIAN <span>AI</span>
+    </div>
+
+    <div
+        class="status"
+        id="systemStatus">
+
+        ● SYSTEM READY
+
+    </div>
+
+</header>
+
+
+<div class="container">
+
+
+<section class="hero">
+
+    <h1>
+        Smart <span>Emergency</span><br>
+        Wearable
+    </h1>
+
+    <p>
+        Guardian AI continuously monitors safety parameters,
+        detects unusual conditions, obtains live location and
+        automatically sends an emergency alert through the
+        connected backend system.
+    </p>
+
+</section>
+
+
+<!-- DEVICE + MAP -->
+
+<div class="grid">
+
+
+<div class="card">
+
+    <div class="card-title">
+        Guardian AI Device
+    </div>
+
+    <canvas id="deviceCanvas"></canvas>
+
+    <div class="controls">
+
+        <button
+            class="primary"
+            onclick="startSimulation()">
+
+            ▶ Start Simulation
+
+        </button>
+
+
+        <button
+            class="danger-btn"
+            onclick="simulateEmergency()">
+
+            🚨 Simulate Emergency
+
+        </button>
+
+
+        <button onclick="resetSystem()">
+
+            ↻ Reset
+
+        </button>
+
+    </div>
+
+</div>
+
+
+<div class="card">
+
+    <div class="card-title">
+        📍 Live Device Location
+    </div>
+
+    <div class="map-wrapper">
+
+        <div id="map"></div>
+
+    </div>
+
+
+    <div class="controls">
+
+        <button
+            class="primary"
+            onclick="startLiveLocation()">
+
+            📍 Start Live Location
+
+        </button>
+
+
+        <button
+            onclick="stopLiveLocation()">
+
+            ■ Stop Location
+
+        </button>
+
+
+        <button
+            onclick="centerOnDevice()">
+
+            ⌖ Center Device
+
+        </button>
+
+    </div>
+
+
+    <div class="location-box">
+
+        <div class="location-line">
+
+            Latitude:
+
+            <strong id="latitude">
+                20.123456
+            </strong>
+
+        </div>
+
+
+        <div class="location-line">
+
+            Longitude:
+
+            <strong id="longitude">
+                78.123456
+            </strong>
+
+        </div>
+
+
+        <div class="location-line">
+
+            Accuracy:
+
+            <strong id="accuracy">
+                ±8 m
+            </strong>
+
+        </div>
+
+
+        <div class="location-line">
+
+            GPS Status:
+
+            <strong
+                class="warning"
+                id="gpsStatus">
+
+                DEMO LOCATION
+
+            </strong>
+
+        </div>
+
+    </div>
+
+</div>
+
+</div>
+
+
+<!-- DASHBOARD -->
+
+<div class="card">
+
+    <div class="card-title">
+        Guardian AI Monitoring Dashboard
+    </div>
+
+
+    <div class="stats">
+
+
+        <div class="stat">
+
+            <div class="stat-label">
+                Heart Rate
+            </div>
+
+            <div
+                class="stat-value"
+                id="heartRate">
+
+                125 BPM
+
+            </div>
+
+        </div>
+
+
+        <div class="stat">
+
+            <div class="stat-label">
+                Motion Sensor
+            </div>
+
+            <div
+                class="stat-value live"
+                id="motion">
+
+                NORMAL
+
+            </div>
+
+        </div>
+
+
+        <div class="stat">
+
+            <div class="stat-label">
+                GPS
+            </div>
+
+            <div
+                class="stat-value live"
+                id="gps">
+
+                ACTIVE
+
+            </div>
+
+        </div>
+
+
+        <div class="stat">
+
+            <div class="stat-label">
+                Battery
+            </div>
+
+            <div
+                class="stat-value"
+                id="battery">
+
+                87%
+
+            </div>
+
+        </div>
+
+
+        <div class="stat">
+
+            <div class="stat-label">
+                Camera
+            </div>
+
+            <div
+                class="stat-value live"
+                id="camera">
+
+                READY
+
+            </div>
+
+        </div>
+
+
+        <div class="stat">
+
+            <div class="stat-label">
+                Cellular
+            </div>
+
+            <div
+                class="stat-value live"
+                id="cellular">
+
+                READY
+
+            </div>
+
+        </div>
+
+
+        <div class="stat">
+
+            <div class="stat-label">
+                Vibration
+            </div>
+
+            <div
+                class="stat-value"
+                id="vibration">
+
+                OFF
+
+            </div>
+
+        </div>
+
+
+        <div class="stat">
+
+            <div class="stat-label">
+                Guardian
+            </div>
+
+            <div
+                class="stat-value"
+                style="font-size:17px">
+
+                +91 8767531125
+
+            </div>
+
+        </div>
+
+
+    </div>
+
+</div>
+
+
+<!-- GRAPH -->
+
+<div
+    class="card"
+    style="margin-top:20px">
+
+    <div class="card-title">
+        ❤️ Heart Rate Monitoring
+    </div>
+
+    <canvas
+        id="graph"
+        style="width:100%;height:230px">
+    </canvas>
+
+</div>
+
+
+<!-- EMERGENCY -->
+
+<div
+    class="alert"
+    id="emergencyAlert">
+
+    <h2>
+        🚨 POSSIBLE EMERGENCY DETECTED
+    </h2>
+
+
+    <p>
+        Guardian AI has detected unusual conditions.
+        The emergency payload has been prepared and
+        the automatic alert request has been sent to
+        the backend.
+    </p>
+
+
+    <div
+        class="message-box"
+        id="messageBox">
+    </div>
+
+
+    <div
+        class="send-status"
+        id="sendStatus">
+
+        Waiting for alert transmission...
+
+    </div>
+
+
+    <!-- Manual fallback buttons -->
+
+    <div class="controls">
+
+        <button
+            class="whatsapp"
+            onclick="openWhatsAppFallback()">
+
+            💬 WhatsApp Fallback
+
+        </button>
+
+
+        <button
+            class="sms"
+            onclick="openSMSFallback()">
+
+            ✉ SMS Fallback
+
+        </button>
+
+
+        <button
+            onclick="copyMessage()">
+
+            📋 Copy Message
+
+        </button>
+
+    </div>
+
+</div>
+
+
+<div class="footer">
+
+    Guardian AI — Smart Emergency Wearable Prototype
+
+    <br><br>
+
+    Browser GPS shows the location of the device
+    running this website. Automatic WhatsApp delivery
+    requires a secure backend/API.
+
+</div>
+
+
+</div>
+
+
+<script>
+
+/* =========================================================
+   GUARDIAN CONFIGURATION
+   ========================================================= */
+
+const GUARDIAN_NUMBER = "8767531125";
+
+const GUARDIAN_WHATSAPP =
+    "918767531125";
+
+
+/*
+ IMPORTANT:
+
+ Replace this URL with your actual backend endpoint.
+
+ Example:
+
+ https://your-domain.com/api/emergency-alert
+
+ Do NOT put WhatsApp API secret keys in this HTML.
+*/
+
+const BACKEND_ALERT_URL =
+    "https://YOUR-BACKEND-DOMAIN.com/api/emergency-alert";
+
+
+/* =========================================================
+   EMERGENCY DATA
+   ========================================================= */
+
+const emergencyData = {
+
+    guardian: GUARDIAN_NUMBER,
+
+    heartRate: 125,
+
+    latitude: 20.123456,
+
+    longitude: 78.123456,
+
+    accuracy: 8,
+
+    event:
+        "Possible emergency detected by Guardian AI"
+
+};
+
+
+let currentLocation = {
+
+    latitude: emergencyData.latitude,
+
+    longitude: emergencyData.longitude,
+
+    accuracy: emergencyData.accuracy
+
+};
+
+
+let locationWatchId = null;
+
+
+/* =========================================================
+   MAP
+   ========================================================= */
+
+const map = L.map("map").setView(
+
+    [
+        emergencyData.latitude,
+        emergencyData.longitude
+    ],
+
+    15
+
+);
+
+
+L.tileLayer(
+
+    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+
+    {
+
+        maxZoom: 19,
+
+        attribution: "Tiles © Esri"
+
+    }
+
+).addTo(map);
+
+
+const deviceMarker = L.marker(
+
+    [
+        emergencyData.latitude,
+        emergencyData.longitude
+    ]
+
+).addTo(map);
+
+
+const accuracyCircle = L.circle(
+
+    [
+        emergencyData.latitude,
+        emergencyData.longitude
+    ],
+
+    {
+
+        radius:
+            emergencyData.accuracy,
+
+        color: "#42e8ff",
+
+        fillOpacity: .15
+
+    }
+
+).addTo(map);
+
+
+/* =========================================================
+   LOCATION
+   ========================================================= */
+
+function updateLocation(
+    latitude,
+    longitude,
+    accuracy
+) {
+
+    currentLocation.latitude =
+        latitude;
+
+    currentLocation.longitude =
+        longitude;
+
+    currentLocation.accuracy =
+        accuracy;
+
+
+    document.getElementById(
+        "latitude"
+    ).textContent =
+        latitude.toFixed(6);
+
+
+    document.getElementById(
+        "longitude"
+    ).textContent =
+        longitude.toFixed(6);
+
+
+    document.getElementById(
+        "accuracy"
+    ).textContent =
+        "±" +
+        Math.round(accuracy) +
+        " m";
+
+
+    document.getElementById(
+        "gpsStatus"
+    ).textContent =
+        "LIVE";
+
+
+    document.getElementById(
+        "gpsStatus"
+    ).className =
+        "live";
+
+
+    document.getElementById(
+        "gps"
+    ).textContent =
+        "LIVE";
+
+
+    const position = [
+        latitude,
+        longitude
+    ];
+
+
+    deviceMarker.setLatLng(
+        position
+    );
+
+
+    accuracyCircle.setLatLng(
+        position
+    );
+
+
+    accuracyCircle.setRadius(
+        accuracy
+    );
+
+
+    deviceMarker.bindPopup(`
+
+        <b>Guardian AI</b><br><br>
+
+        LIVE LOCATION<br>
+
+        Latitude:
+        ${latitude.toFixed(6)}
+        <br>
+
+        Longitude:
+        ${longitude.toFixed(6)}
+        <br>
+
+        Accuracy:
+        ±${Math.round(accuracy)} m
+
+    `);
+
+
+    map.setView(
+        position,
+        17,
+        {
+            animate: true
+        }
+    );
+
+}
+
+
+function startLiveLocation() {
+
+    if (!navigator.geolocation) {
+
+        alert(
+            "Geolocation is not supported."
+        );
+
+        return;
+
+    }
+
+
+    if (
+        locationWatchId !== null
+    ) {
+
+        navigator.geolocation.clearWatch(
+            locationWatchId
+        );
+
+    }
+
+
+    document.getElementById(
+        "gpsStatus"
+    ).textContent =
+        "REQUESTING...";
+
+
+    locationWatchId =
+        navigator.geolocation.watchPosition(
+
+            position => {
+
+                updateLocation(
+
+                    position.coords.latitude,
+
+                    position.coords.longitude,
+
+                    position.coords.accuracy
+
+                );
+
+            },
+
+
+            error => {
+
+                document.getElementById(
+                    "gpsStatus"
+                ).textContent =
+                    "GPS ERROR";
+
+
+                document.getElementById(
+                    "gpsStatus"
+                ).className =
+                    "danger";
+
+
+                console.log(
+                    error.message
+                );
+
+            },
+
+
+            {
+
+                enableHighAccuracy: true,
+
+                maximumAge: 5000,
+
+                timeout: 10000
+
+            }
+
+        );
+
+}
+
+
+function stopLiveLocation() {
+
+    if (
+        locationWatchId !== null
+    ) {
+
+        navigator.geolocation.clearWatch(
+            locationWatchId
+        );
+
+        locationWatchId = null;
+
+    }
+
+
+    document.getElementById(
+        "gpsStatus"
+    ).textContent =
+        "STOPPED";
+
+}
+
+
+function centerOnDevice() {
+
+    map.setView(
+
+        [
+            currentLocation.latitude,
+            currentLocation.longitude
+        ],
+
+        17,
+
+        {
+            animate: true
+        }
+
+    );
+
+    deviceMarker.openPopup();
+
+}
+
+
+/* =========================================================
+   MESSAGE
+   ========================================================= */
+
+function createEmergencyMessage() {
+
+    const lat =
+        currentLocation.latitude;
+
+    const lng =
+        currentLocation.longitude;
+
+    const accuracy =
+        currentLocation.accuracy;
+
+
+    const mapURL =
+        `https://maps.google.com/?q=${lat},${lng}`;
+
+
+    const time =
+        new Date().toLocaleString();
+
+
+    return `🚨 GUARDIAN AI EMERGENCY ALERT
+
+${emergencyData.event}
+
+❤️ Heart Rate: ${emergencyData.heartRate} BPM
+
+📍 Live Location:
+Latitude: ${lat.toFixed(6)}
+Longitude: ${lng.toFixed(6)}
+
+🎯 GPS Accuracy:
+±${Math.round(accuracy)} m
+
+🗺️ Google Maps:
+${mapURL}
+
+⏰ Time:
+${time}
+
+Please check immediately.
+
+— Guardian AI`;
+
+}
+
+
+/* =========================================================
+   PAYLOAD
+   ========================================================= */
+
+function createEmergencyPayload() {
+
+    return {
+
+        guardian:
+            GUARDIAN_NUMBER,
+
+        heartRate:
+            emergencyData.heartRate,
+
+        latitude:
+            currentLocation.latitude,
+
+        longitude:
+            currentLocation.longitude,
+
+        accuracy:
+            currentLocation.accuracy,
+
+        event:
+            emergencyData.event
+
+    };
+
+}
+
+
+/* =========================================================
+   AUTOMATIC BACKEND ALERT
+   ========================================================= */
+
+async function sendAutomaticEmergencyAlert() {
+
+    const payload =
+        createEmergencyPayload();
+
+
+    const status =
+        document.getElementById(
+            "sendStatus"
+        );
+
+
+    status.textContent =
+        "📡 Sending emergency alert...";
+
+
+    /*
+       If the backend URL has not been configured,
+       don't pretend the message was sent.
+    */
+
+    if (
+        BACKEND_ALERT_URL.includes(
+            "YOUR-BACKEND-DOMAIN"
+        )
+    ) {
+
+        status.textContent =
+            "⚠ Backend not configured. " +
+            "Automatic WhatsApp sending is not active.";
+
+        return;
+
+    }
+
+
+    try {
+
+        const response =
+            await fetch(
+
+                BACKEND_ALERT_URL,
+
+                {
+
+                    method: "POST",
+
+                    headers: {
+
+                        "Content-Type":
+                            "application/json"
+
+                    },
+
+                    body:
+                        JSON.stringify(
+                            payload
+                        )
+
+                }
+
+            );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Backend returned HTTP " +
+                response.status
+            );
+
+        }
+
+
+        const result =
+            await response.json();
+
+
+        console.log(
+            "Emergency response:",
+            result
+        );
+
+
+        status.textContent =
+            "✅ Emergency alert successfully sent to backend.";
+
+    }
+
+    catch(error) {
+
+        console.error(
+            "Emergency alert error:",
+            error
+        );
+
+
+        status.textContent =
+            "❌ Automatic alert failed. " +
+            "Use WhatsApp/SMS fallback.";
+
+    }
+
+}
+
+
+/* =========================================================
+   WHATSAPP FALLBACK
+   ========================================================= */
+
+function openWhatsAppFallback() {
+
+    const message =
+        createEmergencyMessage();
+
+
+    const url =
+        `https://wa.me/${GUARDIAN_WHATSAPP}?text=${encodeURIComponent(message)}`;
+
+
+    window.open(
+        url,
+        "_blank"
+    );
+
+}
+
+
+/* =========================================================
+   SMS FALLBACK
+   ========================================================= */
+
+function openSMSFallback() {
+
+    const message =
+        createEmergencyMessage();
+
+
+    const url =
+        `sms:+91${GUARDIAN_NUMBER}?body=${encodeURIComponent(message)}`;
+
+
+    window.location.href =
+        url;
+
+}
+
+
+/* =========================================================
+   COPY
+   ========================================================= */
+
+async function copyMessage() {
+
+    const message =
+        createEmergencyMessage();
+
+
+    try {
+
+        await navigator.clipboard.writeText(
+            message
+        );
+
+
+        document.getElementById(
+            "sendStatus"
+        ).textContent =
+            "📋 Message copied.";
+
+    }
+
+    catch {
+
+        alert(
+            "Unable to copy message."
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   EMERGENCY
+   ========================================================= */
+
+function simulateEmergency() {
+
+
+    document.getElementById(
+        "systemStatus"
+    ).textContent =
+        "● EMERGENCY DETECTED";
+
+
+    document.getElementById(
+        "systemStatus"
+    ).style.color =
+        "#ff4d6d";
+
+
+    document.getElementById(
+        "heartRate"
+    ).textContent =
+        "125 BPM";
+
+
+    document.getElementById(
+        "motion"
+    ).textContent =
+        "ABNORMAL";
+
+
+    document.getElementById(
+        "motion"
+    ).className =
+        "stat-value danger";
+
+
+    document.getElementById(
+        "vibration"
+    ).textContent =
+        "ACTIVE";
+
+
+    document.getElementById(
+        "vibration"
+    ).className =
+        "stat-value danger";
+
+
+    document.getElementById(
+        "cellular"
+    ).textContent =
+        "TRANSMITTING";
+
+
+    document.getElementById(
+        "cellular"
+    ).className =
+        "stat-value warning";
+
+
+    document.getElementById(
+        "emergencyAlert"
+    ).classList.add(
+        "active"
+    );
+
+
+    document.getElementById(
+        "messageBox"
+    ).textContent =
+        createEmergencyMessage();
+
+
+    map.setView(
+
+        [
+            currentLocation.latitude,
+            currentLocation.longitude
+        ],
+
+        17,
+
+        {
+            animate: true
+        }
+
+    );
+
+
+    deviceMarker.openPopup();
+
+
+    if (
+        "vibrate" in navigator
+    ) {
+
+        navigator.vibrate([
+
+            500,
+            200,
+            500,
+            200,
+            800
+
+        ]);
+
+    }
+
+
+    /*
+       THIS IS THE IMPORTANT PART.
+
+       The browser automatically sends the JSON
+       payload to your backend.
+
+       The backend then sends WhatsApp automatically.
+    */
+
+    sendAutomaticEmergencyAlert();
+
+}
+
+
+/* =========================================================
+   SIMULATION
+   ========================================================= */
+
+let simulationInterval = null;
+
+
+function startSimulation() {
+
+    if (
+        simulationInterval !== null
+    ) {
+
+        clearInterval(
+            simulationInterval
+        );
+
+    }
+
+
+    document.getElementById(
+        "systemStatus"
+    ).textContent =
+        "● LIVE MONITORING";
+
+
+    document.getElementById(
+        "systemStatus"
+    ).style.color =
+        "#00ff9d";
+
+
+    simulationInterval =
+        setInterval(() => {
+
+            const value =
+                Math.floor(
+                    70 +
+                    Math.random() * 20
+                );
+
+
+            document.getElementById(
+                "heartRate"
+            ).textContent =
+                value + " BPM";
+
+
+            addHeartRate(
+                value
+            );
+
+        },1000);
+
+}
+
+
+/* =========================================================
+   RESET
+   ========================================================= */
+
+function resetSystem() {
+
+    if (
+        simulationInterval !== null
+    ) {
+
+        clearInterval(
+            simulationInterval
+        );
+
+        simulationInterval = null;
+
+    }
+
+
+    document.getElementById(
+        "systemStatus"
+    ).textContent =
+        "● SYSTEM READY";
+
+
+    document.getElementById(
+        "systemStatus"
+    ).style.color =
+        "#00ff9d";
+
+
+    document.getElementById(
+        "heartRate"
+    ).textContent =
+        "125 BPM";
+
+
+    document.getElementById(
+        "motion"
+    ).textContent =
+        "NORMAL";
+
+
+    document.getElementById(
+        "motion"
+    ).className =
+        "stat-value live";
+
+
+    document.getElementById(
+        "vibration"
+    ).textContent =
+        "OFF";
+
+
+    document.getElementById(
+        "vibration"
+    ).className =
+        "stat-value";
+
+
+    document.getElementById(
+        "cellular"
+    ).textContent =
+        "READY";
+
+
+    document.getElementById(
+        "cellular"
+    ).className =
+        "stat-value live";
+
+
+    document.getElementById(
+        "emergencyAlert"
+    ).classList.remove(
+        "active"
+    );
+
+
+    if (
+        "vibrate" in navigator
+    ) {
+
+        navigator.vibrate(0);
+
+    }
+
+}
+
+
+/* =========================================================
+   HEART RATE GRAPH
+   ========================================================= */
+
+const graph =
+    document.getElementById(
+        "graph"
+    );
+
+const ctx =
+    graph.getContext("2d");
+
+
+let heartRates = [];
+
+
+for (
+    let i = 0;
+    i < 50;
+    i++
+) {
+
+    heartRates.push(
+        70 +
+        Math.random() * 20
+    );
+
+}
+
+
+function resizeGraph() {
+
+    const dpr =
+        window.devicePixelRatio || 1;
+
+
+    const rect =
+        graph.getBoundingClientRect();
+
+
+    graph.width =
+        rect.width * dpr;
+
+
+    graph.height =
+        rect.height * dpr;
+
+
+    ctx.setTransform(
+
+        dpr,
+        0,
+        0,
+        dpr,
+        0,
+        0
+
+    );
+
+}
+
+
+function drawGraph() {
+
+    const width =
+        graph.clientWidth;
+
+    const height =
+        graph.clientHeight;
+
+
+    ctx.clearRect(
+        0,
+        0,
+        width,
+        height
+    );
+
+
+    ctx.beginPath();
+
+
+    heartRates.forEach(
+        (value,index) => {
+
+            const x =
+                index *
+                (
+                    width /
+                    (heartRates.length - 1)
+                );
+
+
+            const y =
+                height -
+                (
+                    (value - 50) /
+                    100
+                ) *
+                height;
+
+
+            if (
+                index === 0
+            ) {
+
+                ctx.moveTo(
+                    x,
+                    y
+                );
+
+            }
+
+            else {
+
+                ctx.lineTo(
+                    x,
+                    y
+                );
+
+            }
+
+        }
+    );
+
+
+    ctx.strokeStyle =
+        "#42e8ff";
+
+    ctx.lineWidth =
+        2;
+
+    ctx.stroke();
+
+}
+
+
+function addHeartRate(
+    value
+) {
+
+    heartRates.push(
+        value
+    );
+
+
+    if (
+        heartRates.length > 50
+    ) {
+
+        heartRates.shift();
+
+    }
+
+
+    drawGraph();
+
+}
+
+
+window.addEventListener(
+    "resize",
+    () => {
+
+        resizeGraph();
+
+        drawGraph();
+
+    }
+);
+
+
+resizeGraph();
+
+drawGraph();
+
+
+/* =========================================================
+   THREE.JS DEVICE
+   ========================================================= */
+
+const canvas =
+    document.getElementById(
+        "deviceCanvas"
+    );
+
+
+const renderer =
+    new THREE.WebGLRenderer({
+
+        canvas: canvas,
+
+        antialias: true,
+
+        alpha: true
+
+    });
+
+
+renderer.setPixelRatio(
+    window.devicePixelRatio
+);
+
+
+renderer.setSize(
+    canvas.clientWidth,
+    canvas.clientHeight,
+    false
+);
+
+
+const scene =
+    new THREE.Scene();
+
+
+const camera =
+    new THREE.PerspectiveCamera(
+
+        45,
+
+        canvas.clientWidth /
+        canvas.clientHeight,
+
+        .1,
+
+        100
+
+    );
+
+
+camera.position.z =
+    5;
+
+
+const ambient =
+    new THREE.AmbientLight(
+        0xffffff,
+        1.2
+    );
+
+scene.add(
+    ambient
+);
+
+
+const keyLight =
+    new THREE.PointLight(
+        0x42e8ff,
+        4,
+        10
+    );
+
+keyLight.position.set(
+    2,
+    3,
+    4
+);
+
+scene.add(
+    keyLight
+);
+
+
+const device =
+    new THREE.Group();
+
+scene.add(
+    device
+);
+
+
+/* Main body */
+
+const body =
+    new THREE.Mesh(
+
+        new THREE.CylinderGeometry(
+            1.35,
+            1.35,
+            .35,
+            64
+        ),
+
+        new THREE.MeshStandardMaterial({
+
+            color: 0x18243a,
+
+            metalness: .8,
+
+            roughness: .25
+
+        })
+
+    );
+
+
+body.rotation.x =
+    Math.PI / 2;
+
+
+device.add(
+    body
+);
+
+
+/* Front ring */
+
+const ring =
+    new THREE.Mesh(
+
+        new THREE.TorusGeometry(
+            .95,
+            .08,
+            20,
+            64
+        ),
+
+        new THREE.MeshStandardMaterial({
+
+            color: 0x42e8ff,
+
+            metalness: .8,
+
+            roughness: .2
+
+        })
+
+    );
+
+
+ring.rotation.x =
+    Math.PI / 2;
+
+
+ring.position.z =
+    .2;
+
+
+device.add(
+    ring
+);
+
+
+/* Camera lens */
+
+const lens =
+    new THREE.Mesh(
+
+        new THREE.CylinderGeometry(
+            .28,
+            .28,
+            .12,
+            32
+        ),
+
+        new THREE.MeshStandardMaterial({
+
+            color: 0x02050a,
+
+            metalness: .4,
+
+            roughness: .1
+
+        })
+
+    );
+
+
+lens.rotation.x =
+    Math.PI / 2;
+
+
+lens.position.z =
+    .28;
+
+
+device.add(
+    lens
+);
+
+
+/* Lens glass */
+
+const glass =
+    new THREE.Mesh(
+
+        new THREE.CircleGeometry(
+            .20,
+            32
+        ),
+
+        new THREE.MeshBasicMaterial({
+            color: 0x42e8ff
+        })
+
+    );
+
+
+glass.position.z =
+    .35;
+
+
+device.add(
+    glass
+);
+
+
+/* Sensors */
+
+for (
+    let i = 0;
+    i < 8;
+    i++
+) {
+
+    const angle =
+        i / 8 *
+        Math.PI *
+        2;
+
+
+    const sensor =
+        new THREE.Mesh(
+
+            new THREE.SphereGeometry(
+                .045,
+                12,
+                12
+            ),
+
+            new THREE.MeshBasicMaterial({
+                color: 0x00ff9d
+            })
+
+        );
+
+
+    sensor.position.set(
+
+        Math.cos(angle) * .72,
+
+        Math.sin(angle) * .72,
+
+        .25
+
+    );
+
+
+    device.add(
+        sensor
+    );
+
+}
+
+
+/* Necklace loop */
+
+const loop =
+    new THREE.Mesh(
+
+        new THREE.TorusGeometry(
+            .30,
+            .06,
+            16,
+            32
+        ),
+
+        new THREE.MeshStandardMaterial({
+
+            color: 0x42e8ff,
+
+            metalness: .8,
+
+            roughness: .2
+
+        })
+
+    );
+
+
+loop.position.y =
+    1.42;
+
+
+device.add(
+    loop
+);
+
+
+/* Necklace */
+
+const necklace =
+    new THREE.Mesh(
+
+        new THREE.TorusGeometry(
+            2,
+            .025,
+            8,
+            100
+        ),
+
+        new THREE.MeshStandardMaterial({
+
+            color: 0x888888,
+
+            metalness: .8,
+
+            roughness: .3
+
+        })
+
+    );
+
+
+necklace.rotation.x =
+    Math.PI / 2;
+
+
+necklace.position.y =
+    .3;
+
+
+device.add(
+    necklace
+);
+
+
+/* Animation */
+
+function animate() {
+
+    requestAnimationFrame(
+        animate
+    );
+
+
+    device.rotation.y +=
+        .006;
+
+
+    renderer.render(
+        scene,
+        camera
+    );
+
+}
+
+
+animate();
+
+
+window.addEventListener(
+    "resize",
+    () => {
+
+        const width =
+            canvas.clientWidth;
+
+        const height =
+            canvas.clientHeight;
+
+
+        camera.aspect =
+            width / height;
+
+
+        camera.updateProjectionMatrix();
+
+
+        renderer.setSize(
+            width,
+            height,
+            false
+        );
+
+    }
+);
+
+
+/* =========================================================
+   START GPS
+   ========================================================= */
+
+window.addEventListener(
+    "load",
+    () => {
+
+        startLiveLocation();
+
+    }
+);
+
+</script>
+
+</body>
+</html>
